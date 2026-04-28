@@ -27,7 +27,7 @@ struct Review {
     id: i64,
     user_id: i64,
     movie_title: String,
-    rating: i32, 
+    rating: f64, 
     genre: Option<String>,
     notes: Option<String>,
     created_at: Option<chrono::NaiveDate>
@@ -38,7 +38,7 @@ struct Review {
 struct CreateReview {
     user_id: i64,
     movie_title: String,
-    rating: i32, 
+    rating: f64, 
     genre: Option<String>,
     notes: Option<String>,
 }
@@ -54,7 +54,7 @@ struct ReviewWithUser {
     id: i64,
     user_id: i64,
     movie_title: String,
-    rating: i32,
+    rating: f64,
     genre: Option<String>,
     notes: Option<String>,
     name: String,
@@ -175,7 +175,8 @@ async fn delete_user(
 async fn create_review(
     State(pool): State<PgPool>,
     Json(create_review): Json<CreateReview> ) -> Result<(StatusCode, Json<Review>), StatusCode> {
-        sqlx::query_as("INSERT INTO reviews (user_id, movie_title, rating, genre, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *") // why returning don't know
+        sqlx::query_as("INSERT INTO reviews (user_id, movie_title, rating, genre, notes) VALUES ($1, $2, $3, $4, $5) RETURNING id, user_id, movie_title, rating::FLOAT8 AS rating, genre, notes, created_at
+") // why returning don't know
         .bind(create_review.user_id)
         .bind(create_review.movie_title)
         .bind(create_review.rating)
@@ -191,7 +192,8 @@ async fn create_review(
 
 
 async fn get_reviews(state: State<PgPool>) -> Result<Json<Vec<Review>>, StatusCode> { // Axum injects the shared pool from .with_state(pool) in main
-    sqlx::query_as("SELECT * FROM reviews")  // like query! but maps results directly into a struct.
+    sqlx::query_as("SELECT id, user_id, movie_title, rating::FLOAT8 AS rating, genre, notes, created_at FROM reviews
+")  // like query! but maps results directly into a struct.
     .fetch_all(&state.0) // runs the query and collects every row into a Vec<User>. &state.0 unwraps the State wrapper to get the &PgPool reference SQLx needs
     .await
     .map(Json) // if the result is Ok(vec), wraps it in Json(vec) so Axum serializes it as a JSON response. Json here is used as a function (it's a tuple struct constructor)
@@ -202,7 +204,8 @@ async fn get_reviews(state: State<PgPool>) -> Result<Json<Vec<Review>>, StatusCo
 async fn get_review(
     state: State<PgPool>,
     Path(id): Path<i64>) -> Result<Json<Review>, StatusCode> {
-    sqlx::query_as("SELECT * from reviews WHERE id = $1")
+    sqlx::query_as("SELECT id, user_id, movie_title, rating::FLOAT8 AS rating, genre, notes, created_at FROM reviews WHERE id = $1
+")
     .bind(id)
     .fetch_one(&state.0).await
     .map(Json) // why just json here, why not json user
@@ -223,7 +226,8 @@ async fn get_leaderboard(State(pool): State<PgPool>) -> Result<Json<Vec<Leaderbo
 }
 
 async fn get_review_full(State(pool): State<PgPool>) -> Result<Json<Vec<ReviewWithUser>>, StatusCode> {
-    sqlx::query_as("SELECT reviews.*, users.name FROM reviews JOIN users ON reviews.user_id = users.id ORDER BY reviews.id DESC")  // like query! but maps results directly into a struct.
+    sqlx::query_as("SELECT reviews.id, reviews.user_id, reviews.movie_title, reviews.rating::FLOAT8 AS rating, reviews.genre, reviews.notes, reviews.created_at, users.name FROM reviews JOIN users ON reviews.user_id = users.id ORDER BY reviews.id DESC
+")  // like query! but maps results directly into a struct.
     .fetch_all(&pool) // runs the query and collects every row into a Vec<User>. &state.0 unwraps the State wrapper to get the &PgPool reference SQLx needs
     .await
     .map(Json) // if the result is Ok(vec), wraps it in Json(vec) so Axum serializes it as a JSON response. Json here is used as a function (it's a tuple struct constructor)

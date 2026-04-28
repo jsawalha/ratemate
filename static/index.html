@@ -375,7 +375,7 @@
       <div class="field">
         <label for="rating">Rating — <span id="rating-label">5</span> / 10</label>
         <div class="rating-row">
-          <input type="range" id="rating" min="0" max="10" value="5"
+          <input type="range" id="rating" min="0" max="10" step="0.5" value="5"
                  oninput="document.getElementById('rating-label').textContent = this.value;
                           document.querySelector('.rating-value').textContent = this.value;" />
           <span class="rating-value">5</span>
@@ -454,6 +454,9 @@
         <option value="Mystery">Mystery</option>
       </select>
       <input type="text" id="filter-movie" placeholder="Filter by movie…" />
+      <select id="filter-year">
+        <option value="">All Years</option>
+      </select>
       <button onclick="clearFilters()">Clear</button>
     </div>
 
@@ -466,10 +469,11 @@
             <th>Rating</th>
             <th>Genre</th>
             <th>Notes</th>
+            <th>Date</th>
           </tr>
         </thead>
         <tbody id="table-body">
-          <tr><td colspan="5" class="no-results">Loading…</td></tr>
+          <tr><td colspan="6" class="no-results">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -561,16 +565,17 @@
       try {
         const res = await fetch(`${API}/reviews/full`);
         allReviews = await res.json();
+        populateYears(allReviews);
         renderTable(allReviews);
       } catch {
-        tbody.innerHTML = '<tr><td colspan="5" class="no-results">Could not load reviews.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="no-results">Could not load reviews.</td></tr>';
       }
     }
 
     function renderTable(reviews) {
       const tbody = document.getElementById('table-body');
       if (reviews.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="no-results">No reviews match your filters.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="no-results">No reviews match your filters.</td></tr>';
         return;
       }
       tbody.innerHTML = reviews.map(r => `
@@ -580,20 +585,38 @@
           <td class="rating-cell">${r.rating}/10</td>
           <td>${r.genre ?? '—'}</td>
           <td class="notes-cell">${r.notes ?? '—'}</td>
+          <td style="color:var(--muted);font-size:0.85rem;white-space:nowrap">${r.created_at ?? '—'}</td>
         </tr>
       `).join('');
+    }
+
+    function populateYears(reviews) {
+      const years = [...new Set(reviews
+        .filter(r => r.created_at)
+        .map(r => r.created_at.substring(0, 4))
+      )].sort((a, b) => b - a);
+
+      const sel = document.getElementById('filter-year');
+      years.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        sel.appendChild(opt);
+      });
     }
 
     function applyFilters() {
       const user  = document.getElementById('filter-user').value.toLowerCase();
       const genre = document.getElementById('filter-genre').value.toLowerCase();
       const movie = document.getElementById('filter-movie').value.toLowerCase();
+      const year  = document.getElementById('filter-year').value;
 
       const filtered = allReviews.filter(r => {
         const matchUser  = !user  || r.name.toLowerCase().includes(user);
         const matchGenre = !genre || (r.genre ?? '').toLowerCase().includes(genre);
         const matchMovie = !movie || r.movie_title.toLowerCase().includes(movie);
-        return matchUser && matchGenre && matchMovie;
+        const matchYear  = !year  || (r.created_at ?? '').startsWith(year);
+        return matchUser && matchGenre && matchMovie && matchYear;
       });
 
       renderTable(filtered);
@@ -603,12 +626,14 @@
       document.getElementById('filter-user').value  = '';
       document.getElementById('filter-genre').value = '';
       document.getElementById('filter-movie').value = '';
+      document.getElementById('filter-year').value  = '';
       renderTable(allReviews);
     }
 
     document.getElementById('filter-user').addEventListener('change', applyFilters);
     document.getElementById('filter-genre').addEventListener('change', applyFilters);
     document.getElementById('filter-movie').addEventListener('input', applyFilters);
+    document.getElementById('filter-year').addEventListener('change', applyFilters);
 
     loadTable();
 
