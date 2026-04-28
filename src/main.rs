@@ -175,7 +175,7 @@ async fn delete_user(
 async fn create_review(
     State(pool): State<PgPool>,
     Json(create_review): Json<CreateReview> ) -> Result<(StatusCode, Json<Review>), StatusCode> {
-        sqlx::query_as("INSERT INTO reviews (user_id, movie_title, rating, genre, notes) VALUES ($1, $2, $3, $4, $5) RETURNING id, user_id, movie_title, rating::FLOAT8 AS rating, genre, notes, created_at
+        sqlx::query_as("INSERT INTO reviews (user_id, movie_title, rating, genre, notes) VALUES ($1, $2, $3::NUMERIC, $4, $5) RETURNING id, user_id, movie_title, rating::FLOAT8 AS rating, genre, notes, created_at
 ") // why returning don't know
         .bind(create_review.user_id)
         .bind(create_review.movie_title)
