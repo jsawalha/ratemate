@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RateMate</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── THEME ─────────────────────────────────────────────
+       Easy to customize — change these variables only.
+       --accent: main button/highlight color
+       --bg:     page background
+       --card:   form card background
+       --border: input border color
+    ──────────────────────────────────────────────────────── */
+    :root {
+      --accent:  #e50914;
+      --accent-hover: #b20710;
+      --bg:      #141414;
+      --card:    #1f1f1f;
+      --border:  #333;
+      --text:    #e5e5e5;
+      --muted:   #888;
+      --radius:  10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    header p {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select, textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 10px 14px;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    .rating-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .rating-row input[type=range] {
+      flex: 1;
+      accent-color: var(--accent);
+      padding: 0;
+      border: none;
+      background: transparent;
+    }
+
+    .rating-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 28px;
+      text-align: center;
+    }
+
+    button[type=submit] {
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 8px;
+      padding: 12px;
+      width: 100%;
+      transition: background 0.2s;
+    }
+
+    button[type=submit]:hover { background: var(--accent-hover); }
+    button[type=submit]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #message {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    #message.success { background: #1a3a1a; color: #4caf50; border: 1px solid #2e5e2e; }
+    #message.error   { background: #3a1a1a; color: #f44336; border: 1px solid #5e2e2e; }
+
+    /* Reviews feed */
+    .feed { width: 100%; max-width: 480px; margin-top: 32px; }
+
+    .feed h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .review-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+
+    .review-card .movie { font-weight: 600; font-size: 1rem; }
+    .review-card .meta  { color: var(--muted); font-size: 0.82rem; margin-top: 4px; }
+    .review-card .notes { font-size: 0.88rem; margin-top: 8px; color: #bbb; }
+
+    .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    /* ── ALL REVIEWS TABLE ─────────────────────────────── */
+    .table-section {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 48px;
+    }
+
+    .table-section h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .filters select, .filters input {
+      flex: 1;
+      min-width: 140px;
+      max-width: 220px;
+    }
+
+    .filters button {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 10px 14px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .filters button:hover { border-color: var(--accent); color: var(--text); }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    thead th {
+      background: #111;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      padding: 12px 16px;
+      text-align: left;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-top: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: #252525; }
+
+    tbody td {
+      padding: 12px 16px;
+      vertical-align: top;
+    }
+
+    td.rating-cell {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    td.notes-cell {
+      color: var(--muted);
+      font-size: 0.85rem;
+      max-width: 280px;
+    }
+
+    .no-results {
+      color: var(--muted);
+      padding: 24px 16px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    /* ── LEADERBOARD ───────────────────────────────────── */
+    .leaderboard-section {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 48px;
+    }
+
+    .leaderboard-section h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .leaderboard-entry {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .lb-rank {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 28px;
+    }
+
+    .lb-rank.gold   { color: #f5c518; }
+    .lb-rank.silver { color: #aaa; }
+    .lb-rank.bronze { color: #cd7f32; }
+
+    .lb-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .lb-avg {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .lb-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Rate<span>Mate</span></h1>
+    <p>Log a movie. See what the crew thinks.</p>
+  </header>
+
+  <!-- Submit form -->
+  <div class="card">
+    <h2>Submit a Review</h2>
+    <form id="review-form">
+
+      <div class="field">
+        <label for="user">Who are you?</label>
+        <select id="user" required>
+          <option value="" disabled selected>Select your name</option>
+          <!-- ── ADD YOUR FRIENDS HERE ─────────────────────────────
+               Format: <option value="USER_ID">Name</option>
+               USER_ID must match the id in your users table.
+               Run: curl http://localhost:8000/users  to get ids.
+          ──────────────────────────────────────────────────────── -->
+          <option value="1">Jeff</option>
+          <option value="2">Adee</option>
+          <option value="3">Nathan</option>
+          <option value="4">Aleisha</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="movie">Movie Title</label>
+        <input type="text" id="movie" placeholder="e.g. Dune: Part Two" required />
+      </div>
+
+      <div class="field">
+        <label for="rating">Rating — <span id="rating-label">5</span> / 10</label>
+        <div class="rating-row">
+          <input type="range" id="rating" min="0" max="10" value="5"
+                 oninput="document.getElementById('rating-label').textContent = this.value;
+                          document.querySelector('.rating-value').textContent = this.value;" />
+          <span class="rating-value">5</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="genre">Genre <span style="color:#555">(optional)</span></label>
+        <select id="genre">
+          <option value="">— Select a genre —</option>
+          <option value="Action">Action</option>
+          <option value="Comedy">Comedy</option>
+          <option value="Drama">Drama</option>
+          <option value="Horror">Horror</option>
+          <option value="Science Fiction">Science Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Romance">Romance</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Western">Western</option>
+          <option value="Musical">Musical</option>
+          <option value="Animation">Animation</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Mystery">Mystery</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="notes">Notes <span style="color:#555">(optional)</span></label>
+        <textarea id="notes" placeholder="What did you think?"></textarea>
+      </div>
+
+      <button type="submit" id="submit-btn">Submit Review</button>
+      <div id="message"></div>
+    </form>
+  </div>
+
+  <!-- Recent reviews feed -->
+  <div class="feed">
+    <h2>Recent Reviews</h2>
+    <div id="reviews-list">Loading...</div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard-section">
+    <h2>🏆 Leaderboard</h2>
+    <div id="leaderboard-list">Loading...</div>
+  </div>
+
+  <!-- All reviews table -->
+  <div class="table-section">
+    <h2>All Reviews</h2>
+
+    <div class="filters">
+      <select id="filter-user">
+        <option value="">All Reviewers</option>
+        <option value="Jeff">Jeff</option>
+        <option value="Adee">Adee</option>
+        <option value="Nathan">Nathan</option>
+        <option value="Aleisha">Aleisha</option>
+      </select>
+
+      <select id="filter-genre">
+        <option value="">All Genres</option>
+        <option value="Action">Action</option>
+        <option value="Comedy">Comedy</option>
+        <option value="Drama">Drama</option>
+        <option value="Horror">Horror</option>
+        <option value="Science Fiction">Science Fiction</option>
+        <option value="Fantasy">Fantasy</option>
+        <option value="Romance">Romance</option>
+        <option value="Thriller">Thriller</option>
+        <option value="Western">Western</option>
+        <option value="Musical">Musical</option>
+        <option value="Animation">Animation</option>
+        <option value="Adventure">Adventure</option>
+        <option value="Mystery">Mystery</option>
+      </select>
+      <input type="text" id="filter-movie" placeholder="Filter by movie…" />
+      <button onclick="clearFilters()">Clear</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Movie</th>
+            <th>Reviewer</th>
+            <th>Rating</th>
+            <th>Genre</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="5" class="no-results">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // ── CONFIG ───────────────────────────────────────────
+    // Change this if your API runs on a different host/port
+    const API = 'http://localhost:8000';
+    // ─────────────────────────────────────────────────────
+
+    // Map user IDs to names for the feed display
+    const USERS = { 1: 'Jeff', 2: 'Adee', 3: 'Nathan', 4: 'Aleisha' };
+
+    async function loadReviews() {
+      const list = document.getElementById('reviews-list');
+      try {
+        const res = await fetch(`${API}/reviews`);
+        const reviews = await res.json();
+        if (reviews.length === 0) {
+          list.innerHTML = '<p style="color:#666">No reviews yet. Be the first!</p>';
+          return;
+        }
+        // Show newest first
+        reviews.reverse();
+        list.innerHTML = reviews.map(r => `
+          <div class="review-card">
+            <div class="movie">${r.movie_title} <span class="badge">${r.rating}/10</span></div>
+            <div class="meta">${USERS[r.user_id] ?? 'Unknown'} ${r.genre ? '· ' + r.genre : ''}</div>
+            ${r.notes ? `<div class="notes">${r.notes}</div>` : ''}
+          </div>
+        `).join('');
+      } catch {
+        list.innerHTML = '<p style="color:#666">Could not load reviews.</p>';
+      }
+    }
+
+    document.getElementById('review-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const msg = document.getElementById('message');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+      msg.style.display = 'none';
+
+      const payload = {
+        user_id:     parseInt(document.getElementById('user').value),
+        movie_title: document.getElementById('movie').value.trim(),
+        rating:      parseInt(document.getElementById('rating').value),
+        genre:       document.getElementById('genre').value.trim() || null,
+        notes:       document.getElementById('notes').value.trim() || null,
+      };
+
+      try {
+        const res = await fetch(`${API}/reviews`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          msg.className = 'success';
+          msg.textContent = '✓ Review submitted!';
+          msg.style.display = 'block';
+          e.target.reset();
+          document.getElementById('rating-label').textContent = '5';
+          document.querySelector('.rating-value').textContent = '5';
+          loadReviews();
+        } else {
+          throw new Error('Server error');
+        }
+      } catch {
+        msg.className = 'error';
+        msg.textContent = '✗ Something went wrong. Try again.';
+        msg.style.display = 'block';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Submit Review';
+    });
+
+    loadReviews();
+
+    // ── ALL REVIEWS TABLE ────────────────────────────────
+    let allReviews = [];
+
+    async function loadTable() {
+      const tbody = document.getElementById('table-body');
+      try {
+        const res = await fetch(`${API}/reviews/full`);
+        allReviews = await res.json();
+        renderTable(allReviews);
+      } catch {
+        tbody.innerHTML = '<tr><td colspan="5" class="no-results">Could not load reviews.</td></tr>';
+      }
+    }
+
+    function renderTable(reviews) {
+      const tbody = document.getElementById('table-body');
+      if (reviews.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="no-results">No reviews match your filters.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = reviews.map(r => `
+        <tr>
+          <td><strong>${r.movie_title}</strong></td>
+          <td>${r.name}</td>
+          <td class="rating-cell">${r.rating}/10</td>
+          <td>${r.genre ?? '—'}</td>
+          <td class="notes-cell">${r.notes ?? '—'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function applyFilters() {
+      const user  = document.getElementById('filter-user').value.toLowerCase();
+      const genre = document.getElementById('filter-genre').value.toLowerCase();
+      const movie = document.getElementById('filter-movie').value.toLowerCase();
+
+      const filtered = allReviews.filter(r => {
+        const matchUser  = !user  || r.name.toLowerCase().includes(user);
+        const matchGenre = !genre || (r.genre ?? '').toLowerCase().includes(genre);
+        const matchMovie = !movie || r.movie_title.toLowerCase().includes(movie);
+        return matchUser && matchGenre && matchMovie;
+      });
+
+      renderTable(filtered);
+    }
+
+    function clearFilters() {
+      document.getElementById('filter-user').value  = '';
+      document.getElementById('filter-genre').value = '';
+      document.getElementById('filter-movie').value = '';
+      renderTable(allReviews);
+    }
+
+    document.getElementById('filter-user').addEventListener('change', applyFilters);
+    document.getElementById('filter-genre').addEventListener('change', applyFilters);
+    document.getElementById('filter-movie').addEventListener('input', applyFilters);
+
+    loadTable();
+
+    // ── LEADERBOARD ──────────────────────────────────────
+    async function loadLeaderboard() {
+      const el = document.getElementById('leaderboard-list');
+      try {
+        const res = await fetch(`${API}/leaderboard`);
+        const entries = await res.json();
+
+        if (entries.length === 0) {
+          el.innerHTML = '<p style="color:#666">No reviews yet.</p>';
+          return;
+        }
+
+        const rankClass = (i) => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const medal     = (i) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+
+        el.innerHTML = entries.map((e, i) => `
+          <div class="leaderboard-entry">
+            <div class="lb-rank ${rankClass(i)}">${medal(i)}</div>
+            <div class="lb-name">${e.name}</div>
+            <div>
+              <div class="lb-avg">${parseFloat(e.avg_rating).toFixed(1)}</div>
+              <div class="lb-label">avg rating</div>
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        el.innerHTML = '<p style="color:#666">Could not load leaderboard.</p>';
+      }
+    }
+
+    loadLeaderboard();
+  </script>
+
+</body>
+</html>

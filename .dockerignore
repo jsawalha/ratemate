@@ -1,0 +1,18 @@
+# Ignore local build artifacts
+target/
+
+# Ignore version control
+.git
+.gitignore
+
+# Ignore IDE settings
+.vscode/
+.idea/
+
+# Ignore Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ignore environment secrets
+.env
